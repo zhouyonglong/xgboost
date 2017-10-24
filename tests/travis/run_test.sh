@@ -32,8 +32,10 @@ if [ ${TASK} == "python_test" ]; then
     source activate python3
     python --version
     conda install numpy scipy pandas matplotlib nose scikit-learn
-    python -m pip install graphviz
+    python -m pip install graphviz pytest pytest-cov codecov
     python -m nose tests/python || exit -1
+    py.test tests/python --cov=python-package/xgboost
+    codecov
     source activate python2
     echo "-------------------------------"
     python --version
@@ -49,8 +51,10 @@ if [ ${TASK} == "python_lightweight_test" ]; then
     source activate python3
     python --version
     conda install numpy scipy nose
-    python -m pip install graphviz
+    python -m pip install graphviz pytest pytest-cov codecov
     python -m nose tests/python || exit -1
+    py.test tests/python --cov=python-package/xgboost
+    codecov
     source activate python2
     echo "-------------------------------"
     python --version
@@ -81,10 +85,9 @@ fi
 
 if [ ${TASK} == "java_test" ]; then
     set -e
-    make jvm-packages
     cd jvm-packages
-    mvn clean install -DskipTests=true
-    mvn test
+    mvn -q clean install -DskipTests -Dmaven.test.skip
+    mvn -q test
 fi
 
 if [ ${TASK} == "cmake_test" ]; then

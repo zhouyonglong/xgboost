@@ -136,7 +136,7 @@ class ColMaker: public TreeUpdater {
         // mark delete for the deleted datas
         for (size_t i = 0; i < rowset.size(); ++i) {
           const bst_uint ridx = rowset[i];
-          if (gpair[ridx].hess < 0.0f) position[ridx] = ~position[ridx];
+          if (gpair[ridx].GetHess() < 0.0f) position[ridx] = ~position[ridx];
         }
         // mark subsample
         if (param.subsample < 1.0f) {
@@ -144,7 +144,7 @@ class ColMaker: public TreeUpdater {
           auto& rnd = common::GlobalRandom();
           for (size_t i = 0; i < rowset.size(); ++i) {
             const bst_uint ridx = rowset[i];
-            if (gpair[ridx].hess < 0.0f) continue;
+            if (gpair[ridx].GetHess() < 0.0f) continue;
             if (!coin_flip(rnd)) position[ridx] = ~position[ridx];
           }
         }
@@ -157,11 +157,11 @@ class ColMaker: public TreeUpdater {
             feat_index.push_back(i);
           }
         }
-        unsigned n = static_cast<unsigned>(param.colsample_bytree * feat_index.size());
+        unsigned n = std::max(static_cast<unsigned>(1),
+                              static_cast<unsigned>(param.colsample_bytree * feat_index.size()));
         std::shuffle(feat_index.begin(), feat_index.end(), common::GlobalRandom());
-        CHECK_GT(n, 0U)
-            << "colsample_bytree=" << param.colsample_bytree
-            << " is too small that no feature can be included";
+        CHECK_GT(param.colsample_bytree, 0U)
+            << "colsample_bytree cannot be zero.";
         feat_index.resize(n);
       }
       {
@@ -627,9 +627,10 @@ class ColMaker: public TreeUpdater {
       std::vector<bst_uint> feat_set = feat_index;
       if (param.colsample_bylevel != 1.0f) {
         std::shuffle(feat_set.begin(), feat_set.end(), common::GlobalRandom());
-        unsigned n = static_cast<unsigned>(param.colsample_bylevel * feat_index.size());
-        CHECK_GT(n, 0U)
-            << "colsample_bylevel is too small that no feature can be included";
+        unsigned n = std::max(static_cast<unsigned>(1),
+                              static_cast<unsigned>(param.colsample_bylevel * feat_index.size()));
+        CHECK_GT(param.colsample_bylevel, 0U)
+            << "colsample_bylevel cannot be zero.";
         feat_set.resize(n);
       }
       dmlc::DataIter<ColBatch>* iter = p_fmat->ColIterator(feat_set);
